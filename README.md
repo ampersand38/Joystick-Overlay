@@ -1,4 +1,4 @@
-# Joystick-Overlay
+# Joystick Overlay
 
 This AutoHotKey script displays joystick input in a small window for use as an overlay while streaming or recording games.  
 It monitors input from 4 axes: roll, pitch, yaw, and thrust.  

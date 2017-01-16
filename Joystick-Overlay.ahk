@@ -75,12 +75,12 @@ Disp:
 	DllCall("LineTo", "UInt", hdcMem, "int", x, "int", y+5)
 
 ;draw yaw
-	DllCall("MoveToEx", "UInt", hdcMem, "int", r, "int", H-6, "UInt", NULL)
-	DllCall("LineTo", "UInt", hdcMem, "int", r, "int", H)
+	DllCall("MoveToEx", "UInt", hdcMem, "int", W-6, "int", r, "UInt", NULL)
+	DllCall("LineTo", "UInt", hdcMem, "int", W, "int", r)
 
 ;draw thrust
-	DllCall("MoveToEx", "UInt", hdcMem, "int", W-6, "int", u, "UInt", NULL)
-	DllCall("LineTo", "UInt", hdcMem, "int", W, "int", u)
+	DllCall("MoveToEx", "UInt", hdcMem, "int", u, "int", H-6, "UInt", NULL)
+	DllCall("LineTo", "UInt", hdcMem, "int", u, "int", H)
 
 ;update screen
 	DllCall("BitBlt", "uint", hdcWin, "int", 0, "int", 0, "int", W, "int", H, "uint", hdcMem, "int", 0, "int", 0, "uint", 0xCC0020)	;hex code for SRCOPY raster-op code

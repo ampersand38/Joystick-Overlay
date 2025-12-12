@@ -1,0 +1,102 @@
+﻿#SingleInstance, Force
+#Persistent
+#NoEnv
+OnExit, GuiClose
+
+;///////////////////////////////////////////////////////////////////////////////
+;Configuration
+;///////////////////////////////////////////////////////////////////////////////
+    
+;Use the Joystick Test Script to find desired joyNum and axes letters.
+;https://autohotkey.com/docs/scripts/JoystickTest.htm
+    
+;X Y Z R U V
+
+joyNum := "3"
+axisRoll := "X"
+axisPitch := "Y"
+axisYaw := "Z"
+axisThrust := "R"
+
+;Set window position and title.
+
+sizeScale:=1.5
+W:=100*sizeScale
+H:=100*sizeScale
+winX:=2560
+winY:=1150
+
+windowTitle := "Joystick-Overlay"
+
+;///////////////////////////////////////////////////////////////////////////////
+
+Gui, +AlwaysOnTop +ToolWindow -Caption
+Gui, Color, 0
+Gui, Show, W%W% H%H% X%winX% Y%winY%, %windowTitle%
+WinSet, TransColor, 0, %windowTitle%
+
+SetTimer, Disp, off
+DllCall("DeleteObject", "UInt", hPen)
+DllCall("DeleteObject", "UInt", hPen2)
+hPen := DllCall("CreatePen", "UInt", 0, "UInt", 1, "UInt", 0xFFFFFF)	;background
+hPen2 := DllCall("CreatePen", "UInt", 0, "UInt", 1, "UInt", 0)	;axes and cursors
+hBrush := DllCall("CreateSolidBrush", "UInt", 0xFFFFFF, "Ptr")	;background
+DllCall("ReleaseDC", "UInt", htx, "UInt", hdcMem)
+hdcWin := DllCall("GetDC", "UPtr", hwnd:=WinExist(windowTitle))
+hdcMem := DllCall("CreateCompatibleDC", "UPtr", hdcWin, "UPtr")
+hbm := DllCall("CreateCompatibleBitmap", "UPtr", hdcWin, "int", W, "int", H, "UPtr")
+hbmO := DllCall("SelectObject", "uint", hdcMem, "uint", hbm)
+DllCall("SetROP2", "UInt", hdcMem, "UInt", 0x04)	;hex for SRCOPY mix mode
+
+;update rate ~60Hz
+SetTimer, Disp, 16
+return
+
+;draw and update loop
+Disp:
+;draw rect to wipe
+	DllCall("SelectObject", "UInt", hdcMem, "UInt", hPen)	;select pen
+	DllCall("SelectObject", "UInt", hdcMem, "UInt", hBrush)	;select brush
+	DllCall("Rectangle", "UInt", hdcMem, "int", 0 , "int", 0, "int", W, "int", H)
+
+;draw referece
+	DllCall("SelectObject", "uint", hdcMem, "uint", hPen2)
+	DllCall("MoveToEx", "UInt", hdcMem, "int", 0, "int", H/2-1, "UInt", NULL)
+	DllCall("LineTo", "UInt", hdcMem, "int", W, "int", H/2-1)
+	DllCall("MoveToEx", "UInt", hdcMem, "int", W/2-1, "int", 0, "UInt", NULL)
+	DllCall("LineTo", "UInt", hdcMem, "int", W/2-1, "int", H)
+
+;read axes
+	x := GetKeyState(joyNum "Joy" axisRoll) * sizeScale
+	y := GetKeyState(joyNum "Joy" axisPitch) * sizeScale
+	r := GetKeyState(joyNum "Joy" axisYaw) * sizeScale
+	u := GetKeyState(joyNum "Joy" axisThrust) * sizeScale
+
+;draw pitch/roll
+	DllCall("MoveToEx", "UInt", hdcMem, "int", x-4, "int", y, "UInt", NULL)
+	DllCall("LineTo", "UInt", hdcMem, "int", x+5, "int", y)
+	DllCall("MoveToEx", "UInt", hdcMem, "int", x, "int", y-4, "UInt", NULL)
+	DllCall("LineTo", "UInt", hdcMem, "int", x, "int", y+5)
+
+;draw yaw
+	DllCall("MoveToEx", "UInt", hdcMem, "int", r, "int", H-6, "UInt", NULL)
+	DllCall("LineTo", "UInt", hdcMem, "int", r, "int", H)
+
+;draw thrust
+	DllCall("MoveToEx", "UInt", hdcMem, "int", W-6, "int", u, "UInt", NULL)
+	DllCall("LineTo", "UInt", hdcMem, "int", W, "int", u)
+
+;update screen
+	DllCall("BitBlt", "uint", hdcWin, "int", 0, "int", 0, "int", W, "int", H, "uint", hdcMem, "int", 0, "int", 0, "uint", 0xCC0020)	;hex code for SRCCOPY raster-op code
+	return
+	
+ExitSub:
+GuiClose:
+	DllCall("DeleteObject", "Ptr", hPen)
+	DllCall("DeleteObject", "Ptr", hPen2)
+	DllCall("DeleteObject", "Ptr", hBrush)
+	DllCall("DeleteObject", "Ptr", hbm)
+	DllCall("DeleteObject", "Ptr", hbmO)
+	DllCall("DeleteDC", "Ptr", hdcMem)
+	DllCall("ReleaseDC", "Ptr", hwnd, "UInt", hdcWin)
+	ExitApp
